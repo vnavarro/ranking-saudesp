@@ -1,0 +1,158 @@
+<!-- References
+https://developers.google.com/maps/documentation/javascript/geocoding#GeocodingRegionCodes
+https://developers.google.com/maps/documentation/javascript/examples/marker-remove
+ -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Place searches</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        width: 70%;
+        height: 100%;
+        float:left;
+      }
+    </style>
+    <!-- <script type="text/javascript" src="main.js"/> -->
+    <script>
+var map;
+var infowindow;
+var geocoder;
+var service;
+var markers = [];
+
+function initMap() {
+  var saopaulo = {lat: -23.5503836, lng: -46.6339538};
+
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: saopaulo,
+    zoom: 15
+  });
+
+  infowindow = new google.maps.InfoWindow();
+
+  service = new google.maps.places.PlacesService(map);
+  service.nearbySearch({
+    location: saopaulo,
+    radius: 2000,
+    types: ['hospital']
+  }, callback);
+
+  geocoder = new google.maps.Geocoder();
+}
+
+function callback(results, status) {
+  if (status === google.maps.places.PlacesServiceStatus.OK) {
+    fillPlacesList(results);
+    for (var i = 0; i < results.length; i++) {
+      createMarker(results[i]);
+    }
+  }
+}
+
+function createMarker(place) {
+  var placeLoc = place.geometry.location;
+  var marker = new google.maps.Marker({
+    map: map,
+    position: place.geometry.location
+  });
+
+  markers.push(marker);
+
+  google.maps.event.addListener(marker, 'click', function() {
+    infowindow.setContent(place.name + "/r:"+ place.rating);
+    infowindow.open(map, this);
+  });
+}
+
+function clearMap() {
+  for (var i = 0; i < markers.length; i++) {
+    markers[i].setMap(null);
+  }
+  markers = [];
+}
+
+function getPlaceDetails(placeId) {
+  var request = {
+    placeId: placeId
+  };
+  service = new google.maps.places.PlacesService(map);
+  service.getDetails(request, placeDetailsCallback);
+}
+
+function placeDetailsCallback(place, status) {
+  if (status == google.maps.places.PlacesServiceStatus.OK) {
+    console.log(place);
+  }
+}
+
+function fillPlacesList(results) {
+  var rankedList = results.map(function (place){
+    place.rating = place.rating == null ? 0.0 : place.rating;
+    return place
+  })
+  rankedList = rankedList.sort(function(a, b){ return a.rating > b.rating; })
+  var ul = document.getElementById("list");
+
+  while (ul.firstChild) {
+      ul.removeChild(ul.firstChild);
+  }
+
+  for( var i =  0 ; i < rankedList.length ; ++i){
+    // create a <li> for each one.
+    var listItem = document.createElement("li");
+
+    // add the item text
+    listItem.innerHTML = rankedList[i].name + "/r:"+ rankedList[i].rating;
+
+    // add listItem to the listElement
+    ul.appendChild(listItem);
+  }
+}
+
+function findCoordinatesForAddress() {
+  clearMap();
+
+  var address = document.getElementById("address").value;
+  var request = {
+         address: address,
+         region: "BR"
+        };
+
+  geocoder.geocode( request, function(results, status) {
+    if (status == google.maps.GeocoderStatus.OK) {
+
+      map.setCenter(results[0].geometry.location);
+
+      service.nearbySearch({
+        location: results[0].geometry.location,
+        radius: 2000,
+        types: ['hospital']
+      }, callback);
+    } else {
+      console.log("Geocode was not successful for the following reason: " + status);
+    }
+  });
+}
+
+    </script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="container" style="float:right; width:30%">
+      <input id="address" />
+      <button onclick="findCoordinatesForAddress()">Buscar</button>
+      <ul id="list">
+      </ul>
+    </div>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDWvQuFn5i-w-M1fQoe76kIVJ0Sr4Zgabs&signed_in=true&libraries=places&callback=initMap" async defer></script>
+  </body>
+</html>
