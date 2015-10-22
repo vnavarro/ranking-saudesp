@@ -68,7 +68,7 @@ function createMarker(place) {
   markers.push(marker);
 
   google.maps.event.addListener(marker, 'click', function() {
-    infowindow.setContent(place.name + "/r:"+ place.rating);
+    infowindow.setContent(place.name + " </br>Nota:"+ place.rating);
     infowindow.open(map, this);
   });
 }
@@ -100,6 +100,7 @@ function fillPlacesList(results) {
     return place
   })
   rankedList = rankedList.sort(function(a, b){ return a.rating > b.rating; })
+  rankedList = rankedList.reverse();
   var ul = document.getElementById("list");
 
   while (ul.firstChild) {
@@ -111,7 +112,7 @@ function fillPlacesList(results) {
     var listItem = document.createElement("li");
 
     // add the item text
-    listItem.innerHTML = rankedList[i].name + "/r:"+ rankedList[i].rating;
+    listItem.innerHTML = rankedList[i].name + " </br>Nota:"+ rankedList[i].rating;
 
     // add listItem to the listElement
     ul.appendChild(listItem);
@@ -146,12 +147,16 @@ function findCoordinatesForAddress() {
     </script>
   </head>
   <body>
+    <p>Faça busca por regiões e veja o ranking <b>(notas dos usuários)</b> de hospitais da região procurada. Não nos responsabilizamos pelas avaliações feitas pelos usuários.</p>
     <div id="map"></div>
-    <div id="container" style="float:right; width:30%">
+    <div id="container" style="display: inline-block; width:30%">
       <input id="address" />
       <button onclick="findCoordinatesForAddress()">Buscar</button>
       <ul id="list">
       </ul>
+    </div>
+    <div>
+      <p>Esse site não possui fins lucrativos e é desenvolvido e mantido por Vitor Navarro.</p>
     </div>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDWvQuFn5i-w-M1fQoe76kIVJ0Sr4Zgabs&signed_in=true&libraries=places&callback=initMap" async defer></script>
   </body>
