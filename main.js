@@ -6,11 +6,17 @@ function HSP(){
   this.markers = [];
 }
 
-HSP.prototype.initMap = function() {
-  var saopaulo = {lat: -23.5503836, lng: -46.6339538};
+HSP.prototype.initMap = function(location) {
+  var coordinates;
+  if(location){
+    coordinates = { lat: location.coords.latitude, lng: location.coords.longitude };
+  }
+  else{
+    coordinates = {lat: -23.5503836, lng: -46.6339538}; //sao paulo
+  }
 
   this.map = new google.maps.Map(document.getElementById('map'), {
-    center: saopaulo,
+    center: coordinates,
     zoom: 15
   });
 
@@ -19,7 +25,7 @@ HSP.prototype.initMap = function() {
   var self = this;
   this.service = new google.maps.places.PlacesService(this.map);
   this.service.nearbySearch({
-    location: saopaulo,
+    location: coordinates,
     radius: 2000,
     types: ['hospital']
   }, function(results, status) {
@@ -27,6 +33,27 @@ HSP.prototype.initMap = function() {
   });
 
   this.geocoder = new google.maps.Geocoder();
+}
+
+HSP.prototype.refreshMapWithLocation = function(location) {
+  this.clearMap();
+
+  if(!location){
+    return;
+  }
+
+  var coordinates = { lat: location.coords.latitude, lng: location.coords.longitude };
+
+  this.map.setCenter(coordinates);
+
+  var self = this;
+  this.service.nearbySearch({
+    location: coordinates,
+    radius: 2000,
+    types: ['hospital']
+  }, function(results, status) {
+    self.callback(results, status);
+  });
 }
 
 HSP.prototype.callback = function(results, status) {
@@ -126,8 +153,31 @@ HSP.prototype.findCoordinatesForAddress = function() {
   });
 }
 
+HSP.prototype.loadUserLocation = function(onLocationLoaded) {
+  // var geo_options = {
+  //   enableHighAccuracy: true,
+  //   maximumAge        : 30000,
+  //   timeout           : 27000
+  // };
+
+  if ("geolocation" in navigator) {
+    /* geolocation is available */
+    //https://developer.mozilla.org/en-US/docs/Web/API/Geolocation/getCurrentPosition
+    //http://stackoverflow.com/questions/5947637/function-fail-never-called-if-user-declines-to-share-geolocation-in-firefox
+    navigator.geolocation.getCurrentPosition(function(position) {
+      onLocationLoaded(position);
+    });
+  } else {
+    /* geolocation IS NOT available */
+    onLocationLoaded();
+  }
+}
+
 window.initHSP = function() {
   var hsp = new HSP();
   hsp.initMap();
+  hsp.loadUserLocation(function(userLocation){
+    hsp.refreshMapWithLocation(userLocation);
+  });
   window.hsp = hsp;
 };
